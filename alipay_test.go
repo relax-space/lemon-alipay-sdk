@@ -19,7 +19,7 @@ func Test_Pay(t *testing.T) {
 		ReqBaseDto: &ReqBaseDto{
 			AppId: *appId,
 		},
-		AuthCode:    "288034490210069049",
+		AuthCode:    "283663915849522991",
 		Subject:     "xinmiao test ali",
 		TotalAmount: 0.01,
 	}
@@ -63,11 +63,13 @@ func Test_Query(t *testing.T) {
 }
 
 func Test_Refund(t *testing.T) {
+
 	reqDto := ReqRefundDto{
 		ReqBaseDto: &ReqBaseDto{
 			AppId: *appId,
 		},
-		OutTradeNo: "11593651266244657670",
+		OutTradeNo:   "112911611299552014581743175398",
+		RefundAmount: 0.01,
 	}
 	custDto := ReqCustomerDto{
 		PriKey: *priKey,
@@ -79,6 +81,7 @@ func Test_Refund(t *testing.T) {
 }
 
 func Test_Reverse(t *testing.T) {
+
 	reqDto := ReqReverseDto{
 		ReqBaseDto: &ReqBaseDto{
 			AppId: *appId,

@@ -2,6 +2,7 @@ package alipay
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -65,7 +66,11 @@ func ValidResponse(respBaseDto *RespBaseDto, body []byte, signStr, respMethod, p
 		err = errors.New(MESSAGE_PAYING)
 		return
 	default:
-		err = errors.New("validate response failure.")
+		err = fmt.Errorf("\nvalidate response failure:code:%v,message:%v,subCode:%v,subMessage:%v",
+			respBaseDto.Code, respBaseDto.Msg,
+			respBaseDto.SubCode, respBaseDto.SubMsg,
+		)
+		//errors.New("validate response failure:")
 		return
 	}
 	return

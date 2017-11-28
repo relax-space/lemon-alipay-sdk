@@ -161,16 +161,16 @@ type RespQueryDto struct {
 type RespRefundDto struct {
 	*RespBaseDto
 
-	TradeNo      string  `json:"trade_no,omitempty"`
-	OutTradeNo   string  `json:"out_trade_no,omitempty"`
-	BuyerLogonId string  `json:"buyer_logon_id,omitempty"`
-	FundChange   string  `json:"fund_change,omitempty"`
-	RefundFee    float64 `json:"refund_fee,omitempty"`
+	TradeNo      string `json:"trade_no,omitempty"`
+	OutTradeNo   string `json:"out_trade_no,omitempty"`
+	BuyerLogonId string `json:"buyer_logon_id,omitempty"`
+	FundChange   string `json:"fund_change,omitempty"`
+	RefundFee    string `json:"refund_fee,omitempty"` //float64
 
-	GmtRefundPay         string                `json:"gmt_refund_pay,omitempty"` //time.Time
-	RefundDetailItemList *RefundDetailItemList `json:"refund_detail_item_list,omitempty"`
-	StoreName            string                `json:"store_name,omitempty"`
-	BuyerUserId          string                `json:"buyer_user_id,omitempty"`
+	GmtRefundPay         string              `json:"gmt_refund_pay,omitempty"` //time.Time
+	RefundDetailItemList *[]RefundDetailItem `json:"refund_detail_item_list,omitempty"`
+	StoreName            string              `json:"store_name,omitempty"`
+	BuyerUserId          string              `json:"buyer_user_id,omitempty"`
 }
 type RespReverseDto struct {
 	*RespBaseDto
@@ -188,11 +188,11 @@ type RespPrepayDto struct {
 	QrCode     string `json:"qr_code,omitempty"`
 }
 
-type RefundDetailItemList struct {
-	FundChannel string  `json:"fund_channel,omitempty"`
-	Amount      float64 `json:"amount,omitempty"`
-	RealAmount  float64 `json:"real_amount,omitempty"`
-	FundType    string  `json:"fund_type,omitempty"`
+type RefundDetailItem struct {
+	FundChannel string `json:"fund_channel,omitempty"`
+	Amount      string `json:"amount,omitempty"`      //float64
+	RealAmount  string `json:"real_amount,omitempty"` //float64
+	FundType    string `json:"fund_type,omitempty"`
 }
 
 type FundBill struct {
