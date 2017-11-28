@@ -60,7 +60,7 @@ func Pay(reqDto *ReqPayDto, custDto *ReqCustomerDto) (result *RespPayDto, err er
 	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
 
 	if len(reqDto.OutTradeNo) == 0 {
-		reqDto.OutTradeNo = random.Uuid(PRE_OUTTRADENO + time.Now().Format("20160102"))
+		reqDto.OutTradeNo = random.NewUuid(PRE_OUTTRADENO)
 	}
 	if len(reqDto.Scene) == 0 {
 		reqDto.Scene = "bar_code"
@@ -160,7 +160,7 @@ func Refund(reqDto *ReqRefundDto, custDto *ReqCustomerDto) (result *RespRefundDt
 	}
 
 	if len(reqDto.OutTradeNo) == 0 {
-		reqDto.OutTradeNo = random.Uuid(PRE_OUTREFUNDNO + time.Now().Format("20160102"))
+		reqDto.OutRequestNo = random.NewUuid(PRE_OUTREFUNDNO)
 	}
 
 	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
@@ -269,7 +269,7 @@ func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (result *RespPrepayDt
 	}
 
 	if len(reqDto.OutTradeNo) == 0 {
-		reqDto.OutTradeNo = random.Uuid(PRE_PREOUTTRADENO + time.Now().Format("20160102"))
+		reqDto.OutTradeNo = random.NewUuid(PRE_PREOUTTRADENO)
 	}
 	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
 	baseDto := structs.New(reqDto.ReqBaseDto)
