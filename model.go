@@ -103,6 +103,43 @@ type ReqPrepayDto struct {
 	BusinessParams    string        `json:"business_params,omitempty"`
 }
 
+type ReqNotifyDto struct {
+	NotifyTime string `json:"notify_time"`
+	NotifyType string `json:"notify_type"`
+	NotifyId   string `json:"notify_id"`
+	SignType   string `json:"sign_type"`
+	Sign       string `json:"sign"`
+
+	TradeNo    string `json:"trade_no"`
+	AppId      string `json:"app_id"`
+	OutTradeNo string `json:"out_trade_no"`
+	OutBizNo   string `json:"out_biz_no"`
+	BuyerId    string `json:"buyer_id"`
+
+	BuyerLogonId string  `json:"buyer_logon_id"`
+	SellerId     string  `json:"seller_id"`
+	SellerEmail  string  `json:"seller_email"`
+	TradeStatus  string  `json:"trade_status"`
+	TotalAmount  float64 `json:"total_amount"`
+
+	ReceiptAmount  float64 `json:"receipt_amount"`
+	InvoiceAmount  float64 `json:"invoice_amount"`
+	BuyerPayAmount float64 `json:"buyer_pay_amount"`
+	PointAmount    float64 `json:"point_amount"`
+	RefundFee      float64 `json:"refund_fee"`
+
+	SendBackFee float64 `json:"send_back_fee"`
+	Subject     string  `json:"subject"`
+	Body        string  `json:"body"`
+	GmtCreate   string  `json:"gmt_create"`
+	GmtPayment  string  `json:"gmt_payment"`
+
+	GmtRefund    string `json:"gmt_refund"`
+	GmtClose     string `json:"gmt_close"`
+	FundBillList string `json:"fund_bill_list"`
+}
+
+//resp
 type RespBaseDto struct {
 	Code    string `json:"code,omitempty"`
 	Msg     string `json:"msg,omitempty"`

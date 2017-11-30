@@ -1,6 +1,7 @@
 package alipay
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -306,5 +307,28 @@ func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (result *RespPrepayDt
 		return
 	}
 	result = respDto.Content
+	return
+}
+
+func CheckNotifySign(reqDto *ReqNotifyDto, custDto *ReqCustomerDto) (err error) {
+
+	baseStruts := structs.New(reqDto)
+	baseStruts.TagName = "json"
+	baseMap := baseStruts.Map()
+
+	rawSignb, err := base64.StdEncoding.DecodeString(reqDto.Sign)
+	if err != nil {
+		err = errors.New("Signature verification failed")
+		return
+	}
+	delete(baseMap, "sign")
+	delete(baseMap, "sign_type")
+	signStr := base.JoinMapObjectEncode(baseMap)
+
+	if !sign.CheckSha1Sign(signStr, string(rawSignb), custDto.PubKey) {
+		err = errors.New("Signature verification failed")
+		return
+	}
+
 	return
 }
