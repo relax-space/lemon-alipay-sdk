@@ -104,6 +104,7 @@ func Test_Prepay(t *testing.T) {
 		},
 		Subject:     "xinmiao test ali",
 		TotalAmount: 0.01,
+		NotifyUrl:   "https://staging.p2shop.cn/ipay/v3/al/notify",
 	}
 	custDto := ReqCustomerDto{
 		PriKey: *priKey,
