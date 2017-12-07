@@ -277,6 +277,8 @@ func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (result *RespPrepayDt
 	baseDto.TagName = "json"
 	baseMap := baseDto.Map()
 
+	baseMap["notify_url"] = reqDto.NotifyUrl
+	reqDto.NotifyUrl = ""
 	b, err := json.Marshal(reqDto)
 	baseMap["biz_content"] = string(b)
 
@@ -286,7 +288,6 @@ func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (result *RespPrepayDt
 		err = errors.New("Signature create failed")
 		return
 	}
-
 	_, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
 		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
 	if err != nil {
