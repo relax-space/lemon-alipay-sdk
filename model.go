@@ -22,7 +22,9 @@ type ReqBaseDto struct {
 	Timestamp    string `json:"timestamp,omitempty"`
 	Version      string `json:"version,omitempty"`
 	AppAuthToken string `json:"app_auth_token,omitempty"`
-	BizContent   string `json:"biz_content"`
+	NotifyUrl    string `json:"notify_url,omitempty"`
+
+	BizContent string `json:"biz_content"`
 }
 
 type ReqPayDto struct {
@@ -81,8 +83,6 @@ type ReqReverseDto struct {
 
 type ReqPrepayDto struct {
 	*ReqBaseDto `json:"-"`
-
-	NotifyUrl string `json:"notify_url,omitempty"`
 
 	OutTradeNo         string  `json:"out_trade_no,omitempty"`
 	SellerId           string  `json:"seller_id,omitempty"`
