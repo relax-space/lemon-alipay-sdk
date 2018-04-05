@@ -3,9 +3,10 @@ package alipay
 import (
 	"flag"
 	"fmt"
-	"kit/test"
 	"os"
 	"testing"
+
+	"github.com/relax-space/go-kit/test"
 )
 
 var (
@@ -27,21 +28,43 @@ func Test_Pay(t *testing.T) {
 		PriKey: *priKey,
 		PubKey: *pubKey,
 	}
-	result, err := Pay(&reqDto, &customDto)
+	statusCode, code, result, err := Pay(&reqDto, &customDto)
 	if err != nil {
 		if err.Error() == MESSAGE_PAYING {
 			dto := ReqQueryDto{
 				ReqBaseDto: reqDto.ReqBaseDto,
 				OutTradeNo: result.OutTradeNo,
 			}
-			respPayDto, err := LoopQuery(&dto, &customDto, 40, 2)
-			fmt.Printf("%+v", respPayDto)
+			statusCode, code, respPayDto, err := LoopQuery(&dto, &customDto, 2, 2)
+			if err != nil && err.Error() == MESSAGE_OVERTIME {
+				reqDto := ReqReverseDto{
+					ReqBaseDto: &ReqBaseDto{
+						AppId: *appId,
+					},
+					OutTradeNo: result.OutTradeNo,
+				}
+				custDto := ReqCustomerDto{
+					PriKey: *priKey,
+					PubKey: *pubKey,
+				}
+				statusCode, code, result, err := Reverse(&reqDto, &custDto, 10, 10)
+				fmt.Printf("Reverse code:%+v\n", code)
+				fmt.Printf("Reverse status code:%+v\n", statusCode)
+				fmt.Printf("Reverse result:%+v\n", result)
+				test.Ok(t, err)
+				return
+			}
+			fmt.Printf("LoopQuery code:%+v\n", code)
+			fmt.Printf("LoopQuery status code:%+v\n", statusCode)
+			fmt.Printf("LoopQuery respPayDto:%+v\n", respPayDto)
 			test.Ok(t, err)
 			return
 		}
 		test.Ok(t, err)
 	}
-	fmt.Printf("%+v", result)
+	fmt.Printf("Pay code:%+v\n", code)
+	fmt.Printf("Pay status code:%+v\n", statusCode)
+	fmt.Printf("Pay result:%+v\n", result)
 	test.Ok(t, err)
 
 }
@@ -51,14 +74,16 @@ func Test_Query(t *testing.T) {
 		ReqBaseDto: &ReqBaseDto{
 			AppId: *appId,
 		},
-		OutTradeNo: "11593651266244657670",
+		OutTradeNo: "111804054330201583378450897",
 	}
 	custDto := ReqCustomerDto{
 		PriKey: *priKey,
 		PubKey: *pubKey,
 	}
-	result, err := Query(&reqDto, &custDto)
-	fmt.Printf("%+v", result)
+	statusCode, code, result, err := Query(&reqDto, &custDto)
+	fmt.Printf("code:%+v", code)
+	fmt.Printf("status code:%+v", statusCode)
+	fmt.Printf("result:%+v", result)
 	test.Ok(t, err)
 }
 
@@ -75,8 +100,10 @@ func Test_Refund(t *testing.T) {
 		PriKey: *priKey,
 		PubKey: *pubKey,
 	}
-	result, err := Refund(&reqDto, &custDto)
-	fmt.Printf("%+v", result)
+	statusCode, code, result, err := Refund(&reqDto, &custDto)
+	fmt.Printf("code:%+v", code)
+	fmt.Printf("status code:%+v", statusCode)
+	fmt.Printf("respPayDto:%+v", result)
 	test.Ok(t, err)
 }
 
@@ -92,25 +119,29 @@ func Test_Reverse(t *testing.T) {
 		PriKey: *priKey,
 		PubKey: *pubKey,
 	}
-	result, err := Reverse(&reqDto, &custDto, 10, 10)
-	fmt.Printf("%+v", result)
+	statusCode, code, result, err := Reverse(&reqDto, &custDto, 10, 10)
+	fmt.Printf("code:%+v", code)
+	fmt.Printf("status code:%+v", statusCode)
+	fmt.Printf("respPayDto:%+v", result)
 	test.Ok(t, err)
 }
 
 func Test_Prepay(t *testing.T) {
 	reqDto := ReqPrepayDto{
 		ReqBaseDto: &ReqBaseDto{
-			AppId: *appId,
+			AppId:     *appId,
+			NotifyUrl: "https://staging.p2shop.cn/ipay/v3/al/notify",
 		},
 		Subject:     "xinmiao test ali",
 		TotalAmount: 0.01,
-		NotifyUrl:   "https://staging.p2shop.cn/ipay/v3/al/notify",
 	}
 	custDto := ReqCustomerDto{
 		PriKey: *priKey,
 		PubKey: *pubKey,
 	}
-	result, err := Prepay(&reqDto, &custDto)
-	fmt.Printf("%+v", result)
+	statusCode, code, result, err := Prepay(&reqDto, &custDto)
+	fmt.Printf("code:%+v", code)
+	fmt.Printf("status code:%+v", statusCode)
+	fmt.Printf("respPayDto:%+v", result)
 	test.Ok(t, err)
 }
