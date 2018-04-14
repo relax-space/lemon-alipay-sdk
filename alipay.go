@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/relax-space/go-kit/base"
@@ -16,12 +15,12 @@ import (
 	"github.com/relax-space/go-kitt/random"
 )
 
-func LoopQuery(reqDto *ReqQueryDto, custDto *ReqCustomerDto, limit, interval int) (result *RespPayDto, err error) {
+func LoopQuery(reqDto *ReqQueryDto, custDto *ReqCustomerDto, limit, interval int) (statusCode int, code string, result *RespPayDto, err error) {
 	count := limit / interval
 	waitTime := time.Duration(interval) * time.Second //2s
 	for index := 0; index < count; index++ {
 		var respQueryDto *RespQueryDto
-		respQueryDto, err = Query(reqDto, custDto)
+		statusCode, code, respQueryDto, err = Query(reqDto, custDto)
 		if err == nil { // 1. request wechat query api success
 			if len(respQueryDto.TradeStatus) == 0 { //1.1 wechat query api response result is exception
 				time.Sleep(waitTime)
@@ -30,9 +29,11 @@ func LoopQuery(reqDto *ReqQueryDto, custDto *ReqCustomerDto, limit, interval int
 			switch respQueryDto.TradeStatus {
 			case "TRADE_SUCCESS": //1.2 pay success
 				MovePayData(respQueryDto, result)
+				code = SUC
 				return
 			case "TRADE_CLOSED", "TRADE_FINISHED":
 				err = errors.New("alipay pay failure")
+				code = E03
 				return //1.3 pay failure
 			case "WAIT_BUYER_PAY": //1.4 pay unknown
 				if index < count {
@@ -46,19 +47,15 @@ func LoopQuery(reqDto *ReqQueryDto, custDto *ReqCustomerDto, limit, interval int
 		}
 	}
 	err = errors.New(MESSAGE_OVERTIME)
+	code = E03
 	return
 }
 
-func Pay(reqDto *ReqPayDto, custDto *ReqCustomerDto) (result *RespPayDto, err error) {
+func Pay(reqDto *ReqPayDto, custDto *ReqCustomerDto) (statusCode int, code string, result *RespPayDto, err error) {
 
 	reqMethod := REQUEST_METHOD_PAY
 	respMethod := RESPONSE_METHOD_PAY
-	var respDto struct {
-		Content *RespPayDto `json:"alipay_trade_pay_response"`
-		Sign    string      `json:"sign"`
-	}
-
-	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
+	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod, "")
 
 	if len(reqDto.OutTradeNo) == 0 {
 		reqDto.OutTradeNo = random.NewUuid(PRE_OUTTRADENO)
@@ -72,34 +69,43 @@ func Pay(reqDto *ReqPayDto, custDto *ReqCustomerDto) (result *RespPayDto, err er
 	baseMap := baseDto.Map()
 
 	b, err := json.Marshal(reqDto)
+	if err != nil {
+		code = E02
+		return
+	}
 	baseMap["biz_content"] = string(b)
 	signStr := base.JoinMapObject(baseMap)
 	baseMap["sign"], err = sign.MakeSha1Sign(signStr, custDto.PriKey)
 	if err != nil {
 		err = errors.New("Signature create failed")
+		code = E02
 		return
 	}
-
-	_, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
+	resp, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
 		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
 	if err != nil {
-		err = fmt.Errorf("%v:%v", MESSAGE_ALIPAY, err)
+		code = E01
 		return
 	}
-
+	statusCode = resp.StatusCode
+	var respDto struct {
+		Content *RespPayDto `json:"alipay_trade_pay_response"`
+		Sign    string      `json:"sign"`
+	}
 	err = json.Unmarshal(body, &respDto)
 	if err != nil {
+		code = E04
 		return
 	}
 	if respDto.Content == nil {
-		err = errors.New("validate response failure.")
+		err = errors.New("alipay response data format is wrong.")
+		code = E04
 		return
 	}
-	err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
+	code, err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
 	if err != nil {
-		if err.Error() == MESSAGE_PAYING {
+		if err.Error() == MESSAGE_PAYING { //customer will query pay result by calling this method:LoopQuery
 			result = &RespPayDto{OutTradeNo: reqDto.OutTradeNo}
-			result.OutTradeNo = reqDto.OutTradeNo
 		}
 		return
 	}
@@ -107,44 +113,51 @@ func Pay(reqDto *ReqPayDto, custDto *ReqCustomerDto) (result *RespPayDto, err er
 	return
 }
 
-func Query(reqDto *ReqQueryDto, custDto *ReqCustomerDto) (result *RespQueryDto, err error) {
+func Query(reqDto *ReqQueryDto, custDto *ReqCustomerDto) (statusCode int, code string, result *RespQueryDto, err error) {
 	reqMethod := REQUEST_METHOD_QUERY
 	respMethod := RESPONSE_METHOD_QUERY
-	var respDto struct {
-		Content *RespQueryDto `json:"alipay_trade_query_response"`
-		Sign    string        `json:"sign"`
-	}
 
-	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
+	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod, "")
 	baseDto := structs.New(reqDto.ReqBaseDto)
 	baseDto.TagName = "json"
 	baseMap := baseDto.Map()
 
 	b, err := json.Marshal(reqDto)
+	if err != nil {
+		code = E02
+		return
+	}
 	baseMap["biz_content"] = string(b)
 	signStr := base.JoinMapObject(baseMap)
 	baseMap["sign"], err = sign.MakeSha1Sign(signStr, custDto.PriKey)
 	if err != nil {
 		err = errors.New("Signature create failed")
+		code = E02
 		return
 	}
 
-	_, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
+	resp, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
 		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
 	if err != nil {
-		err = fmt.Errorf("%v:%v", MESSAGE_ALIPAY, err)
+		code = E01
 		return
 	}
-
+	statusCode = resp.StatusCode
+	var respDto struct {
+		Content *RespQueryDto `json:"alipay_trade_query_response"`
+		Sign    string        `json:"sign"`
+	}
 	err = json.Unmarshal(body, &respDto)
 	if err != nil {
+		code = E04
 		return
 	}
 	if respDto.Content == nil {
-		err = errors.New("validate response failure.")
+		err = errors.New("alipay response data format is wrong.")
+		code = E04
 		return
 	}
-	err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
+	code, err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
 	if err != nil {
 		return
 	}
@@ -152,49 +165,55 @@ func Query(reqDto *ReqQueryDto, custDto *ReqCustomerDto) (result *RespQueryDto, 
 	return
 }
 
-func Refund(reqDto *ReqRefundDto, custDto *ReqCustomerDto) (result *RespRefundDto, err error) {
+func Refund(reqDto *ReqRefundDto, custDto *ReqCustomerDto) (statusCode int, code string, result *RespRefundDto, err error) {
 	reqMethod := REQUEST_METHOD_REFUND
 	respMethod := RESPONSE_METHOD_REFUND
-	var respDto struct {
-		Content *RespRefundDto `json:"alipay_trade_refund_response"`
-		Sign    string         `json:"sign"`
-	}
 
 	if len(reqDto.OutTradeNo) == 0 {
 		reqDto.OutRequestNo = random.NewUuid(PRE_OUTREFUNDNO)
 	}
 
-	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
+	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod, "")
 	baseDto := structs.New(reqDto.ReqBaseDto)
 	baseDto.TagName = "json"
 	baseMap := baseDto.Map()
 
 	b, err := json.Marshal(reqDto)
+	if err != nil {
+		code = E02
+		return
+	}
 	baseMap["biz_content"] = string(b)
-
 	signStr := base.JoinMapObject(baseMap)
 	baseMap["sign"], err = sign.MakeSha1Sign(signStr, custDto.PriKey)
 	if err != nil {
 		err = errors.New("Signature create failed")
+		code = E02
 		return
 	}
 
-	_, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
+	resp, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
 		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
 	if err != nil {
-		err = fmt.Errorf("%v:%v", MESSAGE_ALIPAY, err)
+		code = E01
 		return
 	}
-
+	statusCode = resp.StatusCode
+	var respDto struct {
+		Content *RespRefundDto `json:"alipay_trade_refund_response"`
+		Sign    string         `json:"sign"`
+	}
 	err = json.Unmarshal(body, &respDto)
 	if err != nil {
+		code = E04
 		return
 	}
 	if respDto.Content == nil {
-		err = errors.New("validate response failure.")
+		err = errors.New("alipay response data format is wrong.")
+		code = E04
 		return
 	}
-	err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
+	code, err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
 	if err != nil {
 		return
 	}
@@ -202,50 +221,57 @@ func Refund(reqDto *ReqRefundDto, custDto *ReqCustomerDto) (result *RespRefundDt
 	return
 }
 
-func Reverse(reqDto *ReqReverseDto, custDto *ReqCustomerDto, count int, interval int) (result *RespReverseDto, err error) {
+func Reverse(reqDto *ReqReverseDto, custDto *ReqCustomerDto, count int, interval int) (statusCode int, code string, result *RespReverseDto, err error) {
 	if count <= 0 {
-		err = errors.New("The count of reverse must be greater than 0")
+		err = errors.New("reverse failure,please re-try")
+		code = E01
 		return
 	}
 
 	reqMethod := REQUEST_METHOD_CANCEL
 	respMethod := RESPONSE_METHOD_CANCEL
-	var respDto struct {
-		Content *RespReverseDto `json:"alipay_trade_cancel_response"`
-		Sign    string          `json:"sign"`
-	}
 
-	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
+	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod, "")
 	baseDto := structs.New(reqDto.ReqBaseDto)
 	baseDto.TagName = "json"
 	baseMap := baseDto.Map()
 
 	b, err := json.Marshal(reqDto)
+	if err != nil {
+		code = E02
+		return
+	}
 	baseMap["biz_content"] = string(b)
-
 	signStr := base.JoinMapObject(baseMap)
 	baseMap["sign"], err = sign.MakeSha1Sign(signStr, custDto.PriKey)
 	if err != nil {
 		err = errors.New("Signature create failed")
+		code = E02
 		return
 	}
 
-	_, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
+	resp, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
 		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
 	if err != nil {
-		err = fmt.Errorf("%v:%v", MESSAGE_ALIPAY, err)
+		code = E01
 		return
 	}
-
+	statusCode = resp.StatusCode
+	var respDto struct {
+		Content *RespReverseDto `json:"alipay_trade_cancel_response"`
+		Sign    string          `json:"sign"`
+	}
 	err = json.Unmarshal(body, &respDto)
 	if err != nil {
+		code = E04
 		return
 	}
 	if respDto.Content == nil {
-		err = errors.New("validate response failure.")
+		err = errors.New("alipay response data format is wrong.")
+		code = E04
 		return
 	}
-	err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
+	code, err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
 	if err != nil {
 		return
 	}
@@ -257,53 +283,56 @@ func Reverse(reqDto *ReqReverseDto, custDto *ReqCustomerDto, count int, interval
 		count = count - 1
 		return Reverse(reqDto, custDto, count, interval)
 	}
-
-	return
 }
 
-func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (result *RespPrepayDto, err error) {
+func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (statusCode int, code string, result *RespPrepayDto, err error) {
 	reqMethod := REQUEST_METHOD_PRECREATE
 	respMethod := RESPONSE_METHOD_PRECREATE
-	var respDto struct {
-		Content *RespPrepayDto `json:"alipay_trade_precreate_response"`
-		Sign    string         `json:"sign"`
-	}
 
 	if len(reqDto.OutTradeNo) == 0 {
 		reqDto.OutTradeNo = random.NewUuid(PRE_PREOUTTRADENO)
 	}
-	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod)
+	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod, reqDto.NotifyUrl)
 	baseDto := structs.New(reqDto.ReqBaseDto)
 	baseDto.TagName = "json"
 	baseMap := baseDto.Map()
 
-	baseMap["notify_url"] = reqDto.NotifyUrl
-	reqDto.NotifyUrl = ""
 	b, err := json.Marshal(reqDto)
+	if err != nil {
+		code = E02
+		return
+	}
 	baseMap["biz_content"] = string(b)
 
 	signStr := base.JoinMapObject(baseMap)
 	baseMap["sign"], err = sign.MakeSha1Sign(signStr, custDto.PriKey)
 	if err != nil {
 		err = errors.New("Signature create failed")
+		code = E02
 		return
 	}
-	_, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
+	resp, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
 		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
 	if err != nil {
-		err = fmt.Errorf("%v:%v", MESSAGE_ALIPAY, err)
+		code = E01
 		return
 	}
-
+	statusCode = resp.StatusCode
+	var respDto struct {
+		Content *RespPrepayDto `json:"alipay_trade_precreate_response"`
+		Sign    string         `json:"sign"`
+	}
 	err = json.Unmarshal(body, &respDto)
 	if err != nil {
+		code = E04
 		return
 	}
 	if respDto.Content == nil {
-		err = errors.New("validate response failure.")
+		err = errors.New("alipay response data format is wrong.")
+		code = E04
 		return
 	}
-	err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
+	code, err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
 	if err != nil {
 		return
 	}
