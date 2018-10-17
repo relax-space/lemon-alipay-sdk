@@ -93,7 +93,7 @@ func Test_Refund(t *testing.T) {
 		ReqBaseDto: &ReqBaseDto{
 			AppId: *appId,
 		},
-		OutTradeNo:   "111810178362336733927457547",
+		OutTradeNo:   "111810179304049813706983983",
 		RefundAmount: 0.01,
 	}
 	custDto := ReqCustomerDto{

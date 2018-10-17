@@ -169,7 +169,7 @@ func Refund(reqDto *ReqRefundDto, custDto *ReqCustomerDto) (statusCode int, code
 	reqMethod := REQUEST_METHOD_REFUND
 	respMethod := RESPONSE_METHOD_REFUND
 
-	if len(reqDto.OutTradeNo) == 0 {
+	if len(reqDto.OutRequestNo) == 0 {
 		reqDto.OutRequestNo = random.NewUuid(PRE_OUTREFUNDNO)
 	}
 
