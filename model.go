@@ -255,6 +255,8 @@ type RespRefundDto struct {
 	RefundDetailItemList []*RefundDetailItem `json:"refund_detail_item_list,omitempty" query:"refund_detail_item_list,omitempty"`
 	StoreName            string              `json:"store_name,omitempty" query:"store_name,omitempty"`
 	BuyerUserId          string              `json:"buyer_user_id,omitempty" query:"buyer_user_id,omitempty"`
+
+	SendBackFee string `json:"send_back_fee,omitempty" query:"send_back_fee,omitempty"` //float64
 }
 type RespReverseDto struct {
 	*RespBaseDto
@@ -318,8 +320,8 @@ type PromoParamDto struct {
 }
 
 type SettleInfo struct {
-	settle_detail_infos []*SettleDetailInfo `json:"settle_detail_infos,omitempty" query:"settle_detail_infos,omitempty"`
-	MerchantType        string              `json:"merchant_type,omitempty" query:"merchant_type,omitempty"`
+	SettleDetailInfos []*SettleDetailInfo `json:"settle_detail_infos,omitempty" query:"settle_detail_infos,omitempty"`
+	MerchantType      string              `json:"merchant_type,omitempty" query:"merchant_type,omitempty"`
 }
 
 type SettleDetailInfo struct {
