@@ -68,12 +68,12 @@ type ReqQueryDto struct {
 type ReqRefundDto struct {
 	*ReqBaseDto `json:"-"`
 
-	OutTradeNo      string  `json:"out_trade_no,omitempty" query:"out_trade_no,omitempty"`
-	TradeNo         string  `json:"trade_no,omitempty" query:"trade_no,omitempty"`
-	RefundAmount    float64 `json:"refund_amount,omitempty" query:"refund_amount,omitempty"` //float64
-	refund_currency string  `json:"refund_currency,omitempty" query:"refund_currency,omitempty"`
-	RefundReason    string  `json:"refund_reason,omitempty" query:"refund_reason,omitempty"`
-	OutRequestNo    string  `json:"out_request_no,omitempty" query:"out_request_no,omitempty"`
+	OutTradeNo     string  `json:"out_trade_no,omitempty" query:"out_trade_no,omitempty"`
+	TradeNo        string  `json:"trade_no,omitempty" query:"trade_no,omitempty"`
+	RefundAmount   float64 `json:"refund_amount,omitempty" query:"refund_amount,omitempty"` //float64
+	RefundCurrency string  `json:"refund_currency,omitempty" query:"refund_currency,omitempty"`
+	RefundReason   string  `json:"refund_reason,omitempty" query:"refund_reason,omitempty"`
+	OutRequestNo   string  `json:"out_request_no,omitempty" query:"out_request_no,omitempty"`
 
 	OperatorId              string                          `json:"opreator_id,omitempty" query:"opreator_id,omitempty"`
 	StoreId                 string                          `json:"store_id,omitempty" query:"store_id,omitempty"`
