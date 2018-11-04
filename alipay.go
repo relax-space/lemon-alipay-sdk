@@ -28,6 +28,7 @@ func LoopQuery(reqDto *ReqQueryDto, custDto *ReqCustomerDto, limit, interval int
 			}
 			switch respQueryDto.TradeStatus {
 			case "TRADE_SUCCESS": //1.2 pay success
+				result = &RespPayDto{}
 				MovePayData(respQueryDto, result)
 				code = SUC
 				return

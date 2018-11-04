@@ -98,29 +98,38 @@ func ValidSign(body []byte, signStr, respMethod, pubKey string) (code string, er
 }
 
 func MovePayData(respQueryDto *RespQueryDto, respPayDto *RespPayDto) {
-	respPayDto = &RespPayDto{
-		TradeNo:       respQueryDto.TradeNo,
-		OutTradeNo:    respQueryDto.OutTradeNo,
-		BuyerLogonId:  respQueryDto.BuyerLogonId,
-		TotalAmount:   respQueryDto.TotalAmount,
-		ReceiptAmount: respQueryDto.ReceiptAmount,
+	respPayDto.TradeNo = respQueryDto.TradeNo
+	respPayDto.OutTradeNo = respQueryDto.OutTradeNo
+	respPayDto.BuyerLogonId = respQueryDto.BuyerLogonId
+	respPayDto.PayAmount = respQueryDto.PayAmount
+	respPayDto.SettleTransRate = respQueryDto.SettleTransRate
 
-		BuyerPayAmount: respQueryDto.BuyerPayAmount,
-		PointAmount:    respQueryDto.PointAmount,
-		InvoiceAmount:  respQueryDto.InvoiceAmount,
-		//GmtPayment:     respQueryDto.GmtPayment,
-		FundBillList: respQueryDto.FundBillList,
+	respPayDto.TransPayRate = respQueryDto.TransPayRate
+	respPayDto.TotalAmount = respQueryDto.TotalAmount
+	respPayDto.TransCurrency = respQueryDto.TransCurrency
+	respPayDto.SettleCurrency = respQueryDto.SettleCurrency
+	respPayDto.SettleAmount = respQueryDto.SettleAmount
 
-		//CardBalance:         respQueryDto.CardBalance,
-		StoreName:   respQueryDto.StoreName,
-		BuyerUserId: respQueryDto.BuyerUserId,
-		//DiscountGoodsDetail: respQueryDto.DiscountGoodsDetail,
-		//VoucherDetailList:   respQueryDto.VoucherDetailList,
+	respPayDto.PayCurrency = respQueryDto.PayCurrency
+	respPayDto.ReceiptAmount = respQueryDto.ReceiptAmount
+	respPayDto.BuyerPayAmount = respQueryDto.BuyerPayAmount
+	respPayDto.PointAmount = respQueryDto.PointAmount
+	respPayDto.InvoiceAmount = respQueryDto.InvoiceAmount
 
-		//BusinessParam: respQueryDto.BusinessParam,
-		BuyerUserType: respQueryDto.BuyerUserType,
-	}
-	respPayDto.RespBaseDto = respQueryDto.RespBaseDto
+	respPayDto.GmtPayment = respQueryDto.SendPayDate
+	respPayDto.FundBillList = respQueryDto.FundBillList
+	//respPayDto.CardBalance = respQueryDto.CardBalance
+	respPayDto.StoreName = respQueryDto.StoreName
+	respPayDto.BuyerUserId = respQueryDto.BuyerUserId
+
+	//respPayDto.DiscountGoodsDetail = respQueryDto.DiscountGoodsDetail
+	//respPayDto.VoucherDetailList = respQueryDto.VoucherDetailList
+	respPayDto.AuthTradePayMode = respQueryDto.AuthTradePayMode
+	//respPayDto.BusinessParam = respQueryDto.BusinessParam
+	respPayDto.BuyerUserType = respQueryDto.BuyerUserType
+
+	respPayDto.MdiscountAmount = respQueryDto.MdiscountAmount
+	respPayDto.DiscountAmount = respQueryDto.DiscountAmount
 
 }
 
