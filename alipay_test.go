@@ -145,3 +145,23 @@ func Test_Prepay(t *testing.T) {
 	fmt.Printf("respPayDto:%+v", result)
 	test.Ok(t, err)
 }
+
+func Test_Bill(t *testing.T) {
+	reqDto := ReqBillDto{
+		ReqBaseDto: &ReqBaseDto{
+			AppId:     *appId,
+			NotifyUrl: "https://staging.p2shop.cn/ipay/v3/al/notify",
+		},
+		BillType: "trade",
+		BillDate: "2018-12-17", //2018-12-23
+	}
+	custDto := ReqCustomerDto{
+		PriKey: *priKey,
+		PubKey: *pubKey,
+	}
+	statusCode, code, result, err := Bill(&reqDto, &custDto)
+	fmt.Printf("code:%+v", code)
+	fmt.Printf("status code:%+v", statusCode)
+	fmt.Printf("respPayDto:%+v", result)
+	test.Ok(t, err)
+}
