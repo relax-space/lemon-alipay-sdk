@@ -83,18 +83,6 @@ type ReqRefundDto struct {
 	OrgPid                  string                          `json:"org_pid,omitempty" query:"org_pid,omitempty"`
 }
 
-type OpenApiRoyaltyDetailInfoPojo struct {
-	RoyaltyType  string `json:"royalty_type,omitempty" query:"royalty_type,omitempty"`
-	TransOut     string `json:"trans_out,omitempty" query:"trans_out,omitempty"`
-	TransOutType string `json:"trans_out_type,omitempty" query:"trans_out_type,omitempty"`
-	TransInType  string `json:"trans_in_type,omitempty" query:"trans_in_type,omitempty"`
-	TransIn      string `json:"trans_in,omitempty" query:"trans_in,omitempty"`
-
-	Amount           float64 `json:"amount,omitempty" query:"amount,omitempty"`
-	AmountPercentage int64   `json:"amount_percentage,omitempty" query:"amount_percentage,omitempty"`
-	Desc             string  `json:"desc,omitempty" query:"desc,omitempty"`
-}
-
 type ReqReverseDto struct {
 	*ReqBaseDto `json:"-"`
 
@@ -160,6 +148,12 @@ type ReqNotifyDto struct {
 	GmtRefund    string `json:"gmt_refund" query:"gmt_refund,omitempty"`
 	GmtClose     string `json:"gmt_close" query:"gmt_close,omitempty"`
 	FundBillList string `json:"fund_bill_list" query:"fund_bill_list,omitempty"`
+}
+
+type ReqBillDto struct {
+	*ReqBaseDto `json:"-"`
+	BillType    string `json:"bill_type,omitempty" query:"bill_type,omitempty"`
+	BillDate    string `json:"bill_date,omitempty" query:"bill_date,omitempty"`
 }
 
 //resp
@@ -274,6 +268,11 @@ type RespPrepayDto struct {
 	QrCode     string `json:"qr_code,omitempty" query:"qr_code,omitempty"`
 }
 
+type RespBillDto struct {
+	*RespBaseDto
+	BillDownloadUrl string `json:"bill_download_url,omitempty" query:"bill_download_url,omitempty"`
+}
+
 type RefundDetailItem struct {
 	FundChannel string `json:"fund_channel,omitempty" query:"fund_channel,omitempty"`
 	Amount      string `json:"amount,omitempty" query:"amount,omitempty"`           //float64
@@ -332,4 +331,16 @@ type SettleDetailInfo struct {
 	SettleEntityType string `json:"settle_entity_type,omitempty" query:"settle_entity_type,omitempty"`
 
 	Amount float64 `json:"amount,omitempty" query:"amount,omitempty"`
+}
+
+type OpenApiRoyaltyDetailInfoPojo struct {
+	RoyaltyType  string `json:"royalty_type,omitempty" query:"royalty_type,omitempty"`
+	TransOut     string `json:"trans_out,omitempty" query:"trans_out,omitempty"`
+	TransOutType string `json:"trans_out_type,omitempty" query:"trans_out_type,omitempty"`
+	TransInType  string `json:"trans_in_type,omitempty" query:"trans_in_type,omitempty"`
+	TransIn      string `json:"trans_in,omitempty" query:"trans_in,omitempty"`
+
+	Amount           float64 `json:"amount,omitempty" query:"amount,omitempty"`
+	AmountPercentage int64   `json:"amount_percentage,omitempty" query:"amount_percentage,omitempty"`
+	Desc             string  `json:"desc,omitempty" query:"desc,omitempty"`
 }

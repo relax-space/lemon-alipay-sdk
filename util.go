@@ -1,11 +1,14 @@
 package alipay
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/fatih/structs"
+	"github.com/relax-space/go-kit/base"
 	"github.com/relax-space/go-kit/sign"
 )
 
@@ -19,12 +22,14 @@ const (
 	REQUEST_METHOD_REFUND    = "alipay.trade.refund"
 	REQUEST_METHOD_CANCEL    = "alipay.trade.cancel"
 	REQUEST_METHOD_PRECREATE = "alipay.trade.precreate"
+	REQUEST_METHOD_BILL      = "alipay.data.dataservice.bill.downloadurl.query"
 
 	RESPONSE_METHOD_PAY       = "alipay_trade_pay_response"
 	RESPONSE_METHOD_QUERY     = "alipay_trade_query_response"
 	RESPONSE_METHOD_REFUND    = "alipay_trade_refund_response"
 	RESPONSE_METHOD_CANCEL    = "alipay_trade_cancel_response"
 	RESPONSE_METHOD_PRECREATE = "alipay_trade_precreate_response"
+	RESPONSE_METHOD_BILL      = "alipay_data_dataservice_bill_downloadurl_query_response"
 )
 
 const (
@@ -131,6 +136,29 @@ func MovePayData(respQueryDto *RespQueryDto, respPayDto *RespPayDto) {
 	respPayDto.MdiscountAmount = respQueryDto.MdiscountAmount
 	respPayDto.DiscountAmount = respQueryDto.DiscountAmount
 
+}
+
+func CheckNotifySign(reqDto *ReqNotifyDto, custDto *ReqCustomerDto) (err error) {
+
+	baseStruts := structs.New(reqDto)
+	baseStruts.TagName = "json"
+	baseMap := baseStruts.Map()
+
+	rawSignb, err := base64.StdEncoding.DecodeString(reqDto.Sign)
+	if err != nil {
+		err = errors.New("Signature verification failed")
+		return
+	}
+	delete(baseMap, "sign")
+	delete(baseMap, "sign_type")
+	signStr := base.JoinMapObjectEncode(baseMap)
+
+	if !sign.CheckSha1Sign(signStr, string(rawSignb), custDto.PubKey) {
+		err = errors.New("Signature verification failed")
+		return
+	}
+
+	return
 }
 
 const (

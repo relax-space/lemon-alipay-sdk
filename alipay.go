@@ -1,7 +1,6 @@
 package alipay
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"time"
@@ -341,25 +340,54 @@ func Prepay(reqDto *ReqPrepayDto, custDto *ReqCustomerDto) (statusCode int, code
 	return
 }
 
-func CheckNotifySign(reqDto *ReqNotifyDto, custDto *ReqCustomerDto) (err error) {
+func Bill(reqDto *ReqBillDto, custDto *ReqCustomerDto) (statusCode int, code string, result *RespBillDto, err error) {
+	reqMethod := REQUEST_METHOD_BILL
+	respMethod := RESPONSE_METHOD_BILL
 
-	baseStruts := structs.New(reqDto)
-	baseStruts.TagName = "json"
-	baseMap := baseStruts.Map()
+	reqDto.ReqBaseDto = BuildCommonparam(reqDto.AppId, reqDto.AppAuthToken, reqMethod, "")
+	baseDto := structs.New(reqDto.ReqBaseDto)
+	baseDto.TagName = "json"
+	baseMap := baseDto.Map()
 
-	rawSignb, err := base64.StdEncoding.DecodeString(reqDto.Sign)
+	b, err := json.Marshal(reqDto)
 	if err != nil {
-		err = errors.New("Signature verification failed")
+		code = E02
 		return
 	}
-	delete(baseMap, "sign")
-	delete(baseMap, "sign_type")
-	signStr := base.JoinMapObjectEncode(baseMap)
-
-	if !sign.CheckSha1Sign(signStr, string(rawSignb), custDto.PubKey) {
-		err = errors.New("Signature verification failed")
+	baseMap["biz_content"] = string(b)
+	signStr := base.JoinMapObject(baseMap)
+	baseMap["sign"], err = sign.MakeSha1Sign(signStr, custDto.PriKey)
+	if err != nil {
+		err = errors.New("Signature create failed")
+		code = E02
 		return
 	}
 
+	resp, body, err := httpreq.NewPost(OPENAPIURL, []byte(base.JoinMapObjectEncode(baseMap)),
+		&httpreq.Header{ContentType: httpreq.MIMEApplicationFormUTF8}, nil)
+	if err != nil {
+		code = E01
+		return
+	}
+	statusCode = resp.StatusCode
+	var respDto struct {
+		Content *RespBillDto `json:"alipay_data_dataservice_bill_downloadurl_query_response"`
+		Sign    string       `json:"sign"`
+	}
+	err = json.Unmarshal(body, &respDto)
+	if err != nil {
+		code = E04
+		return
+	}
+	if respDto.Content == nil {
+		err = errors.New("alipay response data format is wrong.")
+		code = E04
+		return
+	}
+	code, err = ValidResponse(respDto.Content.RespBaseDto, body, respDto.Sign, respMethod, custDto.PubKey)
+	if err != nil {
+		return
+	}
+	result = respDto.Content
 	return
 }
